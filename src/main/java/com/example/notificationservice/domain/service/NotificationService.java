@@ -31,46 +31,60 @@ public class NotificationService {
     private final IdempotencyService idempotencyService;
     private final ClientRepository clientRepository;
 
-
     @Transactional
     public Optional<NotificationEvent> processNotificationRequest(NotificationRequest request) {
-        UUID clientId = UUID.fromString(request.getClientId());
-        Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> notFoundException(clientId));
-
-        NotificationEvent event = buildEvent(client, request);
-
-        if (idempotencyService.isDuplicate(event)) {
-            log.info("Duplicate notification event detected: {}", event);
+        if (idempotencyService.isDuplicate(request)) {
+            log.info("Duplicate request for clientId={} and eventType={}", request.getClientId(),
+                    request.getEventType());
             throw new ResponseStatusException(HttpStatus.ACCEPTED, DUPLICATE_REQUEST);
         }
 
-        return processNotificationEvent(event);
+        Client client = getClientOrThrow(UUID.fromString(request.getClientId()));
+        NotificationEvent event = buildNotificationEvent(client, request);
+        return publishIfSubscribed(event);
     }
 
-    public Optional<NotificationEvent> processNotificationEvent(NotificationEvent event) {
-        if (!isSubscribed(event)) {
+    @Transactional
+    public void replayEvent(NotificationEvent event) {
+        if (!NotificationStatus.FAILED.equals(event.getStatus())) {
+            log.info("Skipping replay: Event {} is in status {}", event.getId(), event.getStatus());
+            return;
+        }
+
+        NotificationRequest request = toRequest(event);
+
+        if (idempotencyService.isDuplicate(request)) {
+            log.info("Replay blocked: duplicate event for clientId={} and eventType={}", request.getClientId(),
+                    request.getEventType());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, DUPLICATE_REQUEST);
+        }
+
+        log.info("Replaying failed event {}", event.getId());
+
+        event.setStatus(NotificationStatus.PENDING);
+        event.setAttempts(0);
+
+        publishIfSubscribed(event);
+    }
+
+    private Optional<NotificationEvent> publishIfSubscribed(NotificationEvent event) {
+        if (!subscriptionValidator.isSubscribed(event.getClient().getId(), event.getEventType())) {
             log.info("Client {} is not subscribed to event {}", event.getClient().getId(), event.getEventType());
             return Optional.empty();
         }
 
-        NotificationEvent savedEvent = repository.save(event);
-        publisher.publish(savedEvent);
+        NotificationEvent saved = repository.save(event);
+        publisher.publish(saved);
 
-        return Optional.of(savedEvent);
+        return Optional.of(saved);
     }
 
-    @Transactional
-    public void replayEvent(NotificationEvent notificationEvent) {
-        if (NotificationStatus.FAILED.equals(notificationEvent.getStatus())) {
-            log.info("Replaying failed notification event: {}", notificationEvent);
-            processNotificationEvent(notificationEvent);
-        } else {
-            log.info("Notification event {} is not in FAILED status, cannot replay", notificationEvent);
-        }
+    private Client getClientOrThrow(UUID clientId) {
+        return clientRepository.findById(clientId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, CLIENT_NOT_FOUND + clientId));
     }
 
-    private NotificationEvent buildEvent(Client client, NotificationRequest request) {
+    private NotificationEvent buildNotificationEvent(Client client, NotificationRequest request) {
         return NotificationEvent.builder()
                 .client(client)
                 .eventType(request.getEventType())
@@ -80,11 +94,11 @@ public class NotificationService {
                 .build();
     }
 
-    private boolean isSubscribed(NotificationEvent event) {
-        return subscriptionValidator.isSubscribed(event.getClient().getId(), event.getEventType());
-    }
-
-    private ResponseStatusException notFoundException(UUID clientId) {
-        return new ResponseStatusException(HttpStatus.NOT_FOUND, CLIENT_NOT_FOUND + clientId);
+    private NotificationRequest toRequest(NotificationEvent event) {
+        return NotificationRequest.builder()
+                .clientId(event.getClient().getId().toString())
+                .eventType(event.getEventType())
+                .payload(event.getPayload())
+                .build();
     }
 }
