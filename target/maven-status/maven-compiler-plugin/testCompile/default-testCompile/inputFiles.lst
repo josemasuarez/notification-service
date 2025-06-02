@@ -1,0 +1,16 @@
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/infrastructure/messaging/RabbitNotificationEventPublisherTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/web/GlobalExceptionHandlerTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/infrastructure/persistence/JpaSubscriptionRepositoryTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/domain/model/EventTypeTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/domain/model/SubscriptionTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/infrastructure/util/IdempotencyKeyGeneratorTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/infrastructure/persistence/JpaClientRepositoryTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/domain/model/NotificationEventTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/infrastructure/persistence/JpaNotificationEventRepositoryTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/integration/IdempotencyIntegrationTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/web/NotificationControllerTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/infrastructure/service/IdempotencyServiceTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/domain/model/ClientTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/integration/NotificationIntegrationTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/infrastructure/config/DataLoaderTest.java
+/Users/josemariasuarez/Workspace/notification-service/src/test/java/com/example/notificationservice/infrastructure/config/RabbitConfigTest.java
